@@ -5,7 +5,8 @@
   "main": "index.js",
   "dependencies": {
     "dotenv": "^8.2.0",
-    "mongoose": "^5.11.16"
+    "mongoose": "^5.11.16",
+    "ynab": "^1.21.0"
   },
   "devDependencies": {},
   "scripts": {

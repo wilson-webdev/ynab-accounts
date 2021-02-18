@@ -6,6 +6,10 @@ const transactionSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  dateAdded: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 module.exports = mongoose.model("transactions", transactionSchema);
