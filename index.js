@@ -1,24 +1,18 @@
 require("dotenv").config();
-const mongoose = require('mongoose');
+const connectToDb = require("./db");
+const Transaction = require("./models/transaction");
+const fs = require("fs");
 
-const connectToDb = async (url) => {
-  try {
-    mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true });
-    return;
-  } catch (error) {
-    console.error(error.message);
-  }
+const main = async () => {
+  const db = await connectToDb(process.env.DATABASE_URL, { useNewUrlParser: true, useUnifiedTopology: true });
+
+  // const transaction = new Transaction({
+  //   transactionId: "abc",
+  // });
 };
 
-module.exports.main = async () => {
-  const { DATABASE_URL } = process.env;
-  connectToDb(DATABASE_URL);
+if (process.env.NODE_ENV === "dev") {
+  main();
+}
 
-  const db = mongoose.connection;
-
-  const listingsAndReviews = await db.collection("listingsAndReviews");
-
-  console.log(listingsAndReviews.collectionName);
-
-  return "hello world"; // some update
-};
+module.exports = main;
