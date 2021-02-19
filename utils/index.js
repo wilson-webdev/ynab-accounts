@@ -37,8 +37,7 @@ const round = (n, dp = 0) => {
 };
 
 const formatMemo = (memo, categoryName, matchingCategory) =>
-  (memo || "") +
-  (matchingCategory == null ? ` '${categoryName}' not found` : "");
+  (memo || "") + (matchingCategory == null ? ` '${categoryName}' not found` : "");
 
 const getStartDate = () => {
   const now = new Date();

@@ -11,9 +11,7 @@ module.exports = {
     },
   },
   becky: {
-    budget: TEST
-      ? "2e673740-6675-4f8f-a383-66a3b0c706a3"
-      : "0ec8a864-4590-456a-8025-34b55947063a",
+    budget: TEST ? "2e673740-6675-4f8f-a383-66a3b0c706a3" : "0ec8a864-4590-456a-8025-34b55947063a",
     accounts: {
       reimbursement: TEST
         ? "d04db9e4-bc47-4ea8-a373-5ae2a6a5f010"
