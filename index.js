@@ -275,12 +275,18 @@ const main = async () => {
       };
 
       // Sort out the difference between the total amount and the sub-transactions in case of rounding errors
-      const diff = round(
-        out.subtransactions.reduce((total, item) => total + +item.amount, 0) -
-          out.amount,
-        2
+      const subTransactionTotal = out.subtransactions.reduce(
+        (total, item) => total + +item.amount,
+        0
       );
-      out.subtransactions[0].amount -= Math.abs(diff);
+      const diff = Math.abs(round(subTransactionTotal - out.amount, 2));
+
+      // Adjust the total transaction amount based on the underlying transactions
+      if (subTransactionTotal > out.amount) {
+        out.amount += diff;
+      } else if (subTransactionTotal < out.amount) {
+        out.amount -= diff;
+      }
 
       return out;
     }
