@@ -234,12 +234,12 @@ const main = async () => {
         };
       }
 
-      const out = {
+      return {
         account_id: ids.becky.accounts.reimbursement,
         date: transaction.date,
         amount: 0,
         payee_name: transaction.payee_name || parentTransaction.payee_name,
-        memo: `George paid £${convertAmount(transaction.amount)}`,
+        memo: `You owe £${convertAmount(transaction.amount)}`,
         // flag_color: ynab.SaveTransaction.FlagColorEnum.Orange,
         cleared: ynab.SaveTransaction.ClearedEnum.Cleared,
         approved: true,
@@ -272,8 +272,6 @@ const main = async () => {
           };
         }),
       };
-
-      return out;
     }
   );
 
