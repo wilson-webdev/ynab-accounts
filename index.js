@@ -44,7 +44,11 @@ const processReimbursements = async (
 
     // Get the transactions that are alongside the current transaction
     const associatedTransactions = (parentTran.subtransactions || [])
-      .filter((tran) => tran.category_id !== ids.george.categories.personalReimbursementsCategoryId)
+      .filter(
+        (tran) =>
+          tran.category_id !==
+          ids.george.categories.personalReimbursementsCategoryId
+      )
       .map((tran) => {
         // Remove the emojis so we can compare the text
         tran.category_name = formatCategoryName(tran.category_name);
@@ -62,7 +66,10 @@ const processReimbursements = async (
       categories:
         associatedTransactions.length > 0
           ? associatedTransactions
-              .map((tran) => `${tran.category_name} (£${convertAmount(tran.amount)})`)
+              .map(
+                (tran) =>
+                  `${tran.category_name} (£${convertAmount(tran.amount)})`
+              )
               .join(", ")
           : "Personal",
       amount: `£${convertAmount(item.amount)}`,
@@ -86,7 +93,9 @@ const findMatchingCategory = (categoryName, categories, categoriesIndex) => {
 
   // If a match hasn't been found in the index, attempt to find it in the array of categories using a case-insensitive search with emojis removed
   const match = (
-    categories.find((item) => formattedName === formatCategoryNameForComparison(item.name)) || {}
+    categories.find(
+      (item) => formattedName === formatCategoryNameForComparison(item.name)
+    ) || {}
   ).id;
 
   return { usedIndex: false, match, formattedName };
@@ -140,10 +149,15 @@ const main = async () => {
     false
   );
   const filteredReimbursements = transactions.filter(
-    (item) => processedTransactionsIndex[item.id] == null && /^becky/gi.test(item.memo)
+    (item) =>
+      processedTransactionsIndex[item.id] == null && /^becky/gi.test(item.memo)
   );
 
-  const categoryIndex = await convertDbQueryToIndex(categoriesCollection, {}, "category");
+  const categoryIndex = await convertDbQueryToIndex(
+    categoriesCollection,
+    {},
+    "category"
+  );
 
   console.log(
     `Found ${filteredReimbursements.length} transaction${
@@ -179,11 +193,11 @@ const main = async () => {
       // If there is only one transaction alongside the reimbursement, use this as the template for the single transaction to import
       if (associatedTransactions.length === 1) {
         const [{ category_name: categoryName }] = associatedTransactions;
-        const { match: matchingCategory, usedIndex, formattedName } = findMatchingCategory(
-          categoryName,
-          beckyCategories,
-          categoryIndex
-        );
+        const {
+          match: matchingCategory,
+          usedIndex,
+          formattedName,
+        } = findMatchingCategory(categoryName, beckyCategories, categoryIndex);
 
         if (!usedIndex) {
           categoriesToPost.push(
@@ -231,7 +245,11 @@ const main = async () => {
         cleared: ynab.SaveTransaction.ClearedEnum.Cleared,
         approved: true,
         subtransactions: associatedTransactions.map((tran, _, array) => {
-          const { match: matchingCategory, usedIndex, formattedName } = findMatchingCategory(
+          const {
+            match: matchingCategory,
+            usedIndex,
+            formattedName,
+          } = findMatchingCategory(
             tran.category_name,
             beckyCategories,
             categoryIndex
@@ -249,14 +267,17 @@ const main = async () => {
           return {
             amount: round(transaction.amount / array.length),
             category_id: matchingCategory,
-            memo: `${tran.memo ? `${tran.memo}. ` : ""}George paid £${convertAmount(tran.amount)}`,
+            memo: `${
+              tran.memo ? `${tran.memo}. ` : ""
+            }George paid £${convertAmount(tran.amount)}`,
           };
         }),
       };
 
       // Sort out the difference between the total amount and the sub-transactions in case of rounding errors
       const diff = round(
-        out.subtransactions.reduce((total, item) => total + +item.amount, 0) - out.amount,
+        out.subtransactions.reduce((total, item) => total + +item.amount, 0) -
+          out.amount,
         2
       );
       out.subtransactions[0].amount -= Math.abs(diff);
@@ -271,8 +292,16 @@ const main = async () => {
   }
 
   console.time("post-transactions");
-  await postTransactions(ids.becky.budget, transactionsToPost);
-  await transactionsCollection.insertMany(transactionsToInsert);
+  const transactionsPosted = await postTransactions(
+    ids.becky.budget,
+    transactionsToPost
+  );
+
+  // If at least one posts, then we know all them have
+  if (transactionsPosted.length > 0) {
+    await transactionsCollection.insertMany(transactionsToInsert);
+  }
+
   console.timeLog("post-transactions", transactionsToPost.length);
 
   return true;
