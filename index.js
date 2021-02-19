@@ -20,7 +20,6 @@ const {
 } = require("./utils");
 
 const { DATABASE_URL, NODE_ENV } = process.env;
-const MEMO = "Imported from George's budget";
 
 const processReimbursements = async (
   filteredReimbursements,
@@ -214,7 +213,7 @@ const main = async () => {
           amount: transaction.amount,
           payee_name: parentTransaction.payee_name,
           category_id: matchingCategory,
-          memo: formatMemo(MEMO, categoryName, matchingCategory),
+          memo: formatMemo("", categoryName, matchingCategory),
           // flag_color: ynab.SaveTransaction.FlagColorEnum.Orange,
           cleared: ynab.SaveTransaction.ClearedEnum.Cleared,
           approved: true,
@@ -228,7 +227,7 @@ const main = async () => {
           date: transaction.date,
           amount: transaction.amount,
           payee_name: transaction.payee_name,
-          memo: MEMO,
+          // memo: MEMO,
           // flag_color: ynab.SaveTransaction.FlagColorEnum.Orange,
           cleared: ynab.SaveTransaction.ClearedEnum.Cleared,
           approved: true,
@@ -238,13 +237,13 @@ const main = async () => {
       const out = {
         account_id: ids.becky.accounts.reimbursement,
         date: transaction.date,
-        amount: transaction.amount,
+        amount: 0,
         payee_name: transaction.payee_name || parentTransaction.payee_name,
-        memo: MEMO,
+        memo: `George paid £${convertAmount(transaction.amount)}`,
         // flag_color: ynab.SaveTransaction.FlagColorEnum.Orange,
         cleared: ynab.SaveTransaction.ClearedEnum.Cleared,
         approved: true,
-        subtransactions: associatedTransactions.map((tran, _, array) => {
+        subtransactions: associatedTransactions.map((tran) => {
           const {
             match: matchingCategory,
             usedIndex,
@@ -265,7 +264,7 @@ const main = async () => {
           }
 
           return {
-            amount: round(transaction.amount / array.length),
+            amount: 0,
             category_id: matchingCategory,
             memo: `${
               tran.memo ? `${tran.memo}. ` : ""
@@ -273,20 +272,6 @@ const main = async () => {
           };
         }),
       };
-
-      // Sort out the difference between the total amount and the sub-transactions in case of rounding errors
-      const subTransactionTotal = out.subtransactions.reduce(
-        (total, item) => total + +item.amount,
-        0
-      );
-      const diff = Math.abs(round(subTransactionTotal - out.amount, 2));
-
-      // Adjust the total transaction amount based on the underlying transactions
-      if (subTransactionTotal > out.amount) {
-        out.amount += diff;
-      } else if (subTransactionTotal < out.amount) {
-        out.amount -= diff;
-      }
 
       return out;
     }
