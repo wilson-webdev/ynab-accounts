@@ -16,7 +16,6 @@ const {
   convertDbQueryToIndex,
   formatCategoryNameForComparison,
   formatMemo,
-  round,
 } = require("./utils");
 
 const { DATABASE_URL, NODE_ENV } = process.env;
@@ -140,22 +139,17 @@ const main = async () => {
   );
   console.timeLog("get-reimbursement-transactions", transactions.length);
 
-  // Filter the transactions for 'Becky' at the start of the memo field and that it hasn't been imported before
   const processedTransactionsIndex = await convertDbQueryToIndex(
     transactionsCollection,
     {},
     "transactionId",
     false
   );
+
+  // Filter the transactions for 'Becky' at the start of the memo field and that it hasn't been imported before
   const filteredReimbursements = transactions.filter(
     (item) =>
       processedTransactionsIndex[item.id] == null && /^becky/gi.test(item.memo)
-  );
-
-  const categoryIndex = await convertDbQueryToIndex(
-    categoriesCollection,
-    {},
-    "category"
   );
 
   console.log(
@@ -168,6 +162,12 @@ const main = async () => {
   if (filteredReimbursements.length === 0) {
     return false;
   }
+
+  const categoryIndex = await convertDbQueryToIndex(
+    categoriesCollection,
+    {},
+    "category"
+  );
 
   // Transactions to be imported once mapped
   const reimbursements = [];
