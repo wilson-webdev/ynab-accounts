@@ -1,15 +1,25 @@
 require("dotenv").config();
+const ynab = require("ynab");
 const connectToDb = require("./db");
 const Transaction = require("./models/transaction");
 const Category = require("./models/category");
-const ynab = require("ynab");
 const ids = require("./ids");
 const getCategories = require("./api/getCategories");
 const postTransactions = require("./api/postTransactions");
 const getTransactions = require("./api/getTransactions");
 const getTransactionsByCategory = require("./api/getTransactionsByCategory");
-const { getStartDate, createIndex, formatCategoryName, convertAmount, convertDbQueryToIndex, formatCategoryNameForComparison } = require("./utils");
-const { DATABASE_URL, TEST, NODE_ENV, YNAB_TOKEN } = process.env;
+const {
+  getStartDate,
+  createIndex,
+  formatCategoryName,
+  convertAmount,
+  convertDbQueryToIndex,
+  formatCategoryNameForComparison,
+  formatMemo,
+  round,
+} = require("./utils");
+
+const { DATABASE_URL, NODE_ENV } = process.env;
 const MEMO = "Imported from George's budget";
 
 const processReimbursements = async (
@@ -70,18 +80,20 @@ const processReimbursements = async (
     });
   });
 
-  console.log(docsToInsert)
-  await transactionsCollection.insertMany(docsToInsert)
+  console.log(docsToInsert);
+  await transactionsCollection.insertMany(docsToInsert);
 };
 
 const findMatchingCategory = (categoryName, categories, categoriesIndex) => {
-  const docsToInsert = [];
-
   const formattedName = formatCategoryNameForComparison(categoryName);
 
   // Attempt to find the ID using the index first
   if (categoriesIndex[formattedName] != null) {
-    return { usedIndex: true, match: categoriesIndex[formattedName], formattedName };
+    return {
+      usedIndex: true,
+      match: categoriesIndex[formattedName],
+      formattedName,
+    };
   }
 
   // If a match hasn't been found in the index, attempt to find it in the array of categories using a case-insensitive search with emojis removed
@@ -95,7 +107,14 @@ const findMatchingCategory = (categoryName, categories, categoriesIndex) => {
 };
 
 const main = async () => {
-  const db = await connectToDb(DATABASE_URL, { useNewUrlParser: true, useUnifiedTopology: true });
+  if (typeof connectToDb !== "function") {
+    return false;
+  }
+
+  const db = await connectToDb(DATABASE_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
   const categoriesCollection = await db.collection("categories");
   const transactionsCollection = await db.collection("transactions");
 
@@ -120,12 +139,24 @@ const main = async () => {
 
   console.time("get-reimbursement-transactions");
   // Get all transactions under the personal reimbursement category
-  const transactions = await getTransactionsByCategory(ids.george.budget, ids.george.categories.personalReimbursementsCategoryId, startDate);
+  const transactions = await getTransactionsByCategory(
+    ids.george.budget,
+    ids.george.categories.personalReimbursementsCategoryId,
+    startDate
+  );
   console.timeLog("get-reimbursement-transactions", transactions.length);
 
   // Filter the transactions for 'Becky' at the start of the memo field and that it hasn't been imported before
-  const processedTransactionsIndex = await convertDbQueryToIndex(transactionsCollection, {}, "transactionId", false);
-  const filteredReimbursements = transactions.filter((item) => processedTransactionsIndex[item.id] == null && /^becky/gi.test(item.memo));
+  const processedTransactionsIndex = await convertDbQueryToIndex(
+    transactionsCollection,
+    {},
+    "transactionId",
+    false
+  );
+  const filteredReimbursements = transactions.filter(
+    (item) =>
+      processedTransactionsIndex[item.id] == null && /^becky/gi.test(item.memo)
+  );
 
   console.log(
     `Found ${filteredReimbursements.length} transaction${
@@ -159,13 +190,19 @@ const main = async () => {
       // If there is only one transaction alongside the reimbursement, use this as the template for the single transaction to import
       if (associatedTransactions.length === 1) {
         const [{ category_name: categoryName }] = associatedTransactions;
-        const { match: matchingCategory, usedIndex, formattedName } = findMatchingCategory(
-          categoryName,
-          beckyCategories
-        );
+        const {
+          match: matchingCategory,
+          usedIndex,
+          formattedName,
+        } = findMatchingCategory(categoryName, beckyCategories);
 
         if (!usedIndex) {
-          categoriesCollection.push(new Category({ category: formattedName, categoryId: matchingCategory }));
+          categoriesCollection.push(
+            new Category({
+              category: formattedName,
+              categoryId: matchingCategory,
+            })
+          );
         }
 
         return {
@@ -205,13 +242,19 @@ const main = async () => {
         cleared: ynab.SaveTransaction.ClearedEnum.Cleared,
         approved: true,
         subtransactions: associatedTransactions.map((tran, _, array) => {
-          const { match: matchingCategory, usedIndex, formattedName } = findMatchingCategory(
-            tran.category_name,
-            beckyCategories
-          );
+          const {
+            match: matchingCategory,
+            usedIndex,
+            formattedName,
+          } = findMatchingCategory(tran.category_name, beckyCategories);
 
           if (!usedIndex) {
-            categoriesCollection.push(new Category({ category: formattedName, categoryId: matchingCategory }));
+            categoriesCollection.push(
+              new Category({
+                category: formattedName,
+                categoryId: matchingCategory,
+              })
+            );
           }
 
           return {
@@ -244,10 +287,12 @@ const main = async () => {
   console.time("post-transactions");
   await postTransactions(ids.becky.budget, transactionsToPost);
   console.timeLog("post-transactions", transactionsToPost.length);
+
+  return true;
 };
 
 if (NODE_ENV === "dev") {
-  main()
+  main();
 }
 
 module.exports = main;

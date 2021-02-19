@@ -12,4 +12,4 @@ module.exports = async (budgetId, transactions) => {
   } catch (error) {
     console.error(error);
   }
-}
+};

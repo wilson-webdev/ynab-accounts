@@ -12,5 +12,6 @@ module.exports = async (url, options) => {
     return db;
   } catch (error) {
     console.error(error);
+    return null;
   }
 };
