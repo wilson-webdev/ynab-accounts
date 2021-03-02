@@ -7,5 +7,5 @@ This repo utilises the [YNAB API](https://api.youneedabudget.com/) in order to p
 ## 👨‍💻 Tech
 
 - Node.js
-- MongoDB to saves which transactions have already been processed
+- MongoDB to saves which transactions that have already been processed
 - Google Cloud Functions in order to run the script every night
