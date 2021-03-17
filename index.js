@@ -100,6 +100,18 @@ const findMatchingCategory = (categoryName, categories, categoriesIndex) => {
   return { usedIndex: false, match, formattedName };
 };
 
+const checkAndPushCategories = (categoriesToPost, usedIndex, formattedName, matchingCategory) => {
+  // If we didn't use the index and the matching category is defined
+  if (!usedIndex && !!matchingCategory) {
+    categoriesToPost.push(
+      new Category({
+        category: formattedName,
+        categoryId: matchingCategory,
+      })
+    );
+  }
+};
+
 const main = async () => {
   if (typeof connectToDb !== "function") {
     return false;
@@ -199,14 +211,7 @@ const main = async () => {
           formattedName,
         } = findMatchingCategory(categoryName, beckyCategories, categoryIndex);
 
-        if (!usedIndex) {
-          categoriesToPost.push(
-            new Category({
-              category: formattedName,
-              categoryId: matchingCategory,
-            })
-          );
-        }
+        checkAndPushCategories(categoriesToPost, usedIndex, formattedName, matchingCategory);
 
         return {
           account_id: ids.becky.accounts.reimbursement,
@@ -255,14 +260,7 @@ const main = async () => {
             categoryIndex
           );
 
-          if (!usedIndex) {
-            categoriesToPost.push(
-              new Category({
-                category: formattedName,
-                categoryId: matchingCategory,
-              })
-            );
-          }
+          checkAndPushCategories(categoriesToPost, usedIndex, formattedName, matchingCategory);
 
           return {
             amount: 0,
